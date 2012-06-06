@@ -25,9 +25,9 @@ my %WriteMakefileArgs = (
     "IPC::Cmd" => "0.78",
     "Mojolicious" => "2.48",
     "Mojolicious::Command::deploy" => "0.01",
-    "Net::Heroku" => "0.04"
+    "Net::Heroku" => "0.06"
   },
-  "VERSION" => "0.01",
+  "VERSION" => "0.02",
   "test" => {
     "TESTS" => "t/*.t"
   }

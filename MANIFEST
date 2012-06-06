@@ -1,8 +1,8 @@
+Changes
 LICENSE
 MANIFEST
 META.yml
 Makefile.PL
-README.md
 dist.ini
 lib/Mojolicious/Command/deploy/heroku.pm
 lib/Mojolicious/Command/generate/heroku.pm
