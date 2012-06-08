@@ -20,14 +20,14 @@ my %WriteMakefileArgs = (
   "LICENSE" => "perl",
   "NAME" => "Mojolicious::Command::deploy::heroku",
   "PREREQ_PM" => {
+    "File::Path" => "2.08",
     "File::Slurp" => "9999.19",
-    "Git::Repository" => "1.25",
     "IPC::Cmd" => "0.78",
     "Mojolicious" => "2.48",
     "Mojolicious::Command::deploy" => "0.01",
-    "Net::Heroku" => "0.06"
+    "Net::Heroku" => "0.07"
   },
-  "VERSION" => "0.02",
+  "VERSION" => "0.03",
   "test" => {
     "TESTS" => "t/*.t"
   }

@@ -2,9 +2,10 @@ package Mojolicious::Command::deploy::heroku;
 use Mojo::Base 'Mojo::Command';
 
 #use IO::All 'io';
+use File::Path 'make_path';
 use File::Slurp qw/ slurp write_file /;
+use File::Spec;
 use Getopt::Long qw/ GetOptions :config no_auto_abbrev no_ignore_case /;
-use Git::Repository;
 use IPC::Cmd 'can_run';
 use Mojo::IOLoop;
 use Mojo::UserAgent;
@@ -12,7 +13,7 @@ use Mojolicious::Command::generate::heroku;
 use Mojolicious::Command::generate::makefile;
 use Net::Heroku;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 has tmpdir => sub { $ENV{MOJO_TMPDIR} || File::Spec->tmpdir };
 has ua => sub { Mojo::UserAgent->new->ioloop(Mojo::IOLoop->singleton) };
@@ -63,12 +64,6 @@ sub validate {
   # Create or appname
   push @errors => '--create or --appname must be specified'
     if !defined $opt->{create} and !defined $opt->{name};
-
-  # API Key
-  #push @errors => 'API key not specified, or not found in '
-  #  . $self->credentials_file . "\n"
-  #  . ' (Your API key can be found at https://api.heroku.com/account)'
-  #  if !defined $opt->{api_key};
 
   return @errors;
 }
@@ -162,21 +157,21 @@ sub generate_key {
 
   # Get/create dir
   #my $dir = io->dir("$ENV{HOME}/.ssh")->perms(0700)->mkdir;
-  my $dir = "$ENV{HOME}/.ssh";
-  mkdir $dir;
-  chmod 0700, $dir;
+  my $dir = File::Spec->catfile($ENV{HOME}, '.ssh');
+  make_path($dir, {mode => 0700});
 
   # Generate RSA key
-  `ssh-keygen -t rsa -N "" -f $dir/$file 2>&1`;
+  my $path = File::Spec->catfile($dir, $file);
+  `ssh-keygen -t rsa -N "" -f "$path" 2>&1`;
 
-  return "$dir/$file.pub";
+  return "$path.pub";
 }
 
 sub ssh_keys {
 
   #return grep /\.pub$/ => io->dir("$ENV{HOME}/.ssh/")->all;
-  opendir(my $dir => "$ENV{HOME}/.ssh/") or return;
-  return map "$ENV{HOME}/.ssh/$_" => grep /\.pub$/ => readdir($dir);
+  opendir(my $dir => File::Spec->catfile($ENV{HOME}, '.ssh')) or return;
+  return map File::Spec->catfile($ENV{HOME}, '.ssh', $_) => grep /\.pub$/ => readdir($dir);
 }
 
 
@@ -243,8 +238,7 @@ sub save_local_api_key {
 
   #my $dir = io->dir("$ENV{HOME}/.heroku")->perms(0700)->mkdir;
   my $dir = "$ENV{HOME}/.heroku";
-  mkdir $dir;
-  chmod 0700, $dir;
+  make_path($dir, {mode => 0700});
 
   #return io("$dir/credentials")->print($email, "\n", $api_key, "\n");
   return write_file "$dir/credentials", $email, "\n", $api_key, "\n";
@@ -279,14 +273,17 @@ sub prompt_user_pass {
 sub create_repo {
   my ($self, $home_dir, $tmp_dir) = @_;
 
-  my $git_dir = $tmp_dir . '/mojo_deploy_git_' . int rand 1000;
+  my $git_dir = File::Spec->catfile($tmp_dir, 'mojo_deploy_git', int rand 1000);
+  make_path($git_dir);
 
-  Git::Repository->run(init => $git_dir);
-
-  return Git::Repository->new(
+  my $r = {
     work_tree => $home_dir,
-    git_dir   => $git_dir . '/.git'
-  );
+    git_dir   => $git_dir,
+  };
+
+  git($r, 'init');
+
+  return $r;
 }
 
 sub fill_repo {
@@ -301,7 +298,7 @@ sub fill_repo {
     add => grep { my $file = $_; $file if !grep $file =~ /$_\W*/ => @ignore }
       @$files);
 
-  git($r, commit => '-m' => 'Initial Commit');
+  git($r, commit => '-m' => '"Initial commit"');
 
   return $r;
 }
@@ -316,7 +313,9 @@ sub push_repo {
 }
 
 sub git {
-  return shift->run(@_);
+  my $r = shift;
+  my $cmd = "git --work-tree=\"$r->{work_tree}\" --git-dir=\"$r->{git_dir}\" " . join " " => @_;
+  return `$cmd`;
 }
 
 sub create_or_get_app {
@@ -401,7 +400,7 @@ Mojolicious::Command::deploy::heroku - Deploy to Heroku
 
 L<Mojolicious::Command::deploy::heroku> deploys a Mojolicious app to Heroku.
 
-*NOTE* Currently works only on *nix systems.
+*NOTE* The deploy command itself works on Windows, but the Heroku service does not reliably accept deployments from Windows.  Your mileage may vary.
 
 =head1 WORKFLOW
 
@@ -417,13 +416,15 @@ L<https://api.heroku.com/signup>
 
 =item 3) B<Deploy>
 
-  ./hello deploy heroku --create
+  hello deploy heroku --create
+
+The deploy command creates a git repository of the B<current directory's contents> in /tmp, and then pushes it to a remote heroku repository.
 
 =back
 
 =head1 SEE ALSO
 
-L<http://heroku.com/>, L<http://mojolicio.us>
+L<https://github.com/tempire/perloku>, L<http://heroku.com/>, L<http://mojolicio.us>
 
 =head1 SOURCE
 
@@ -431,8 +432,9 @@ L<http://github.com/tempire/mojolicious-command-deploy-heroku>
 
 =head1 VERSION
 
-0.02
+0.03
 
 =head1 AUTHOR
 
 Glen Hinkle C<tempire@cpan.org>
+
