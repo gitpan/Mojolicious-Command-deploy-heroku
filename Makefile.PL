@@ -23,11 +23,11 @@ my %WriteMakefileArgs = (
     "File::Path" => "2.08",
     "File::Slurp" => "9999.19",
     "IPC::Cmd" => "0.78",
-    "Mojolicious" => "2.48",
+    "Mojolicious" => "3.0",
     "Mojolicious::Command::deploy" => "0.01",
     "Net::Heroku" => "0.08"
   },
-  "VERSION" => "0.08",
+  "VERSION" => "0.09",
   "test" => {
     "TESTS" => "t/*.t"
   }
