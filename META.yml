@@ -21,4 +21,4 @@ requires:
   Net::Heroku: 0.08
 resources:
   repository: git://github.com/tempire/mojolicious-command-deploy-heroku.git
-version: 0.09
+version: 0.10

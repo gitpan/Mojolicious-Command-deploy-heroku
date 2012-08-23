@@ -13,7 +13,7 @@ use Mojolicious::Command::generate::heroku;
 use Mojolicious::Command::generate::makefile;
 use Net::Heroku;
 
-our $VERSION = 0.09;
+our $VERSION = 0.10;
 
 has tmpdir => sub { $ENV{MOJO_TMPDIR} || File::Spec->tmpdir };
 has ua => sub { Mojo::UserAgent->new->ioloop(Mojo::IOLoop->singleton) };
@@ -68,12 +68,9 @@ sub validate {
 
 sub run {
   my $self = shift;
-  my $class = $ENV{MOJO_APP} || 'MyApp';
-  my $name =
-    ref $class eq 'Mojolicious::Lite' ? +($0 =~ /^\W*(.+)$/)[0] : $class;
 
   # App home dir
-  $self->ua->app($class);
+  $self->ua->app($self->app);
   my $home_dir = $self->ua->app->home->to_string;
 
   # Command-line Options
@@ -448,7 +445,7 @@ L<http://github.com/tempire/mojolicious-command-deploy-heroku>
 
 =head1 VERSION
 
-0.09
+0.10
 
 =head1 AUTHOR
 
